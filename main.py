@@ -1,17 +1,11 @@
 from aux import *
 from core import *
 from Simulations import *
-from contextlib import redirect_stdout
-
-with open('help.txt', 'w') as f:
-    with redirect_stdout(f):
-        print('it now prints to `help.text`')
 import multiprocessing
-import time
 
 def met():
   autos_met_test = []
-  for i in range(20):
+  for i in range(5):
       autos_met_test.append(AutoCorrelation(nt=10, N=24, eqSteps=10000, \
                                             ncalcs=2000, \
                                             steps_test=(50,1000,40), Ts =\
@@ -24,7 +18,7 @@ def met():
 
 def wolff_20():
   autos_wolff_test = []
-  for i in range(20):
+  for i in range(5):
       autos_wolff_test.append(AutoCorrelation(nt=10, N=24,\
                                               eqSteps=10000,ncalcs=2000,\
                                                       steps_test=(50,1000,40),\
@@ -32,14 +26,13 @@ def wolff_20():
                                               1*8.61733e-5, j1 =\
                                               1*8.61733e-5, s1 = 1, s2 = 1,\
                                               h=0.))
-      autos_wolff_test[i].run_Wolff(wrat = 20)
-
+      autos_wolff_test[i].run_Wolff(20)
   autos_wolff_av = Autocorrelation_Average(autos_wolff_test)
   write_aes('autos_wolff_test.txt',autos_wolff_av)
 
 def wolff_60():
   autos_wolff60_test = []
-  for i in range(20):
+  for i in range(5):
       autos_wolff60_test.append(AutoCorrelation(nt=10, N=24, eqSteps=10000,\
                                                         ncalcs=2000,\
                                                 steps_test=(50,1000,40), Ts\
@@ -47,10 +40,9 @@ def wolff_60():
                                                 1*8.61733e-5,\
                                                         j1 = 1*8.61733e-5,\
                                                 s1 = 1, s2 = 1, h=0.))
-      autos_wolff60_test[i].run_Wolff(wrat = 60)
-
+      autos_wolff60_test[i].run_Wolff(60)
   autos_wolff60_av = Autocorrelation_Average(autos_wolff60_test)
-  write_aes('autos_wolff_test.txt',autos_wolff60_av)
+  write_aes('autos_wolff60_av_test.txt',autos_wolff60_av)
 
 def wolff_pure():
     autos_pure_test = []
@@ -63,7 +55,7 @@ def wolff_pure():
                                                        j1 = 1*8.61733e-5,\
                                                s1 = 1, s2 = 1, h=0.))
         autos_pure_test[i].run_pure_Wolff()
-        autos_pure_av = Autocorrelation_Average(autos_pure_test)
+    autos_pure_av = Autocorrelation_Average(autos_pure_test)
     write_aes('autos_pure_test.txt',autos_pure_av)
 
 if __name__ == '__main__':

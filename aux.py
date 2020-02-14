@@ -7,7 +7,7 @@ import random
 def initialstate(N):
     '''Generates a random spin configuration
     Parameters:
-    N : system size''' 
+    N : system size'''
     state = 2*np.random.randint(2, size=(N,N))-1 # either 1 or -1
     state = state.astype('int32')
     return state
@@ -33,16 +33,16 @@ def quick_config(config,N):
     N : system size'''
     f = plt.figure(figsize=(5,5))
     X, Y = np.meshgrid(range(N), range(N))
-    sp =  f.add_subplot(1,1,1)  
+    sp =  f.add_subplot(1,1,1)
     plt.setp(sp.get_yticklabels(), visible=False)
-    plt.setp(sp.get_xticklabels(), visible=False)      
+    plt.setp(sp.get_xticklabels(), visible=False)
     plt.pcolormesh(X, Y, config, cmap=plt.cm.RdBu);
-    plt.axis('tight')   
+    plt.axis('tight')
     plt.clim(-2,2)
     plt.show()
 
 class Simulation_Average():
-    '''Averages a list of simulations performed at the same T points 
+    '''Averages a list of simulations performed at the same T points
     Parameters:
     sim : list of instances of Simulations'''
     def __init__(self, sim):
@@ -50,9 +50,9 @@ class Simulation_Average():
         self.sim = sim
         self.avE,self.avM,self.avC,self.avX =\
         np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt)
-        
+
         d = 1/len(sim)
-        
+
         for i in range(len(sim)):
             self.avE += sim[i].E*d
             self.avM += abs(sim[i].M*d)
@@ -60,7 +60,7 @@ class Simulation_Average():
             self.avX += sim[i].X*d
         print('average energy is %f\n\n' % self.avE)
 
-class Autocorrelation_Average(): 
+class Autocorrelation_Average():
     '''averages a list of Autocorrelation simulations performed at the same temperature points
     Parameters:
     sim : a list of Autocorrelation_simulation objects'''
@@ -74,9 +74,9 @@ class Autocorrelation_Average():
         np.zeros((self.nt,len(range(*self.steps_test)))),np.zeros((self.nt,len(range(*self.steps_test)))),\
         np.zeros((self.nt,len(range(*self.steps_test)))),np.zeros((self.nt,len(range(*self.steps_test)))),\
         np.zeros((self.nt,len(range(*self.steps_test)))),np.zeros((self.nt,len(range(*self.steps_test))))
- 
+
         d = 1/len(sim)
-        
+
         for k in range(len(sim)): # evaluate the Ae for each run for each T for each value of interSteps
             for j in range(sim[k].nt):
                 for i in range(len(range(*self.steps_test))):
@@ -98,12 +98,12 @@ def auto_fit(auto_av,data):
     """Fits autocorrelation vs time measurements to a simple exponential decay
     Parameters:
     auto_av : instance from Autocorrelation_Average class
-    data = slice object, 
+    data = slice object,
     choose the data you want to fit too (often the large steps limit is dominated by statistical errors)
-    
+
     Returns:
     None
-    
+
     Modifies:
     adds (1D list) x and (2D list) y to auto_av instance"""
     from scipy import optimize
@@ -123,8 +123,39 @@ def auto_fit(auto_av,data):
     auto_av.x = auto_av.steps
     auto_av.y = []
 
-    for i in range(len(params)):    
+    for i in range(len(params)):
         auto_av.y.append(decay_function(auto_av.x,params[i][0],params[i][1]))
+
+
+def post_fit(T,steps,aes,data):
+    """Fits autocorrelation vs time measurements to a simple exponential decay
+    Parameters:
+    auto_av : instance from Autocorrelation_Average class
+    data = slice object,
+    choose the data you want to fit too (often the large steps limit is dominated by statistical errors)
+
+    Returns:
+    None
+
+    Modifies:
+    adds (1D list) x and (2D list) y to auto_av instance"""
+    from scipy import optimize
+
+    params = np.zeros([len(T),2])
+
+    for i in range(0,len(T)):
+        params[i], params_cov = optimize.curve_fit(decay_function,\
+                                          steps[0][data],\
+                                          np.log(np.ma.masked_less(aes[i][data],0).filled(fill_value=1e-5)),\
+                                          p0=[-0.015,-0.5])
+    print(params)
+    print(1/params.T[0])
+    x = np.array(steps[0])
+    y = []
+
+    for i in range(len(params)):
+        y.append(decay_function(x,params[i][0],params[i][1]))
+    return(x,y)
 
 def Wolff(config,beta,j0,j1,sav):
     '''Simple implementation of Wolff cluster algorithm
@@ -170,18 +201,41 @@ def Td_plot(simulation):
 
     sp =  f.add_subplot(2, 2, 2 );
     plt.scatter(simulation.T, abs(simulation.M), s=10, marker='o', color='RoyalBlue')
-    plt.xlabel("Temperature (T)", fontsize=20); 
+    plt.xlabel("Temperature (T)", fontsize=20);
     plt.ylabel("Magnetization ", fontsize=20);   plt.axis('tight');
 
     sp =  f.add_subplot(2, 2, 3 );
     plt.scatter(simulation.T, simulation.C, s=10, marker='o', color='IndianRed')
-    plt.xlabel("Temperature (T)", fontsize=20);  
-    plt.ylabel("Specific Heat ", fontsize=20);   plt.axis('tight');   
+    plt.xlabel("Temperature (T)", fontsize=20);
+    plt.ylabel("Specific Heat ", fontsize=20);   plt.axis('tight');
 
     sp =  f.add_subplot(2, 2, 4 );
     plt.scatter(simulation.T, simulation.X, s=10, marker='o', color='RoyalBlue')
     plt.xlabel("Temperature (T)", fontsize=20); 
     plt.ylabel("Susceptibility", fontsize=20);   plt.axis('tight');
+    return(f)
+
+def aes_plot(T,steps,aes):
+    '''Quickly plots aes lines from write aes output
+    Parameters:
+    T : list of Temperature points
+    steps: list for the time axis (in units of simulation steps)
+    aes: list of values of the autocorrelation function'''
+    x,y = aux.post_fit(*args,slice(0,-1))
+    f = plt.figure(figsize=(10, 10)) 
+
+    sp =  f.add_subplot(1, 2, 1 );
+    for i in T:
+        plt.scatter(steps, aes, s=10, marker='x')
+        plt.xlabel("Steps", fontsize=20);
+        plt.ylabel("Autocorrelation decay_function", fontsize=20);  plt.axis('tight');
+
+    sp =  f.add_subplot(1, 2, 2 );
+    for i in T:
+        plt.scatter(steps, aes, s=10, marker='x')
+        plt.xlabel("Steps", fontsize=20);
+        plt.ylabel("Autocorrelation decay_function", fontsize=20);  plt.axis('tight');
+        plt.yscale('log')
 
     return(f)
 
@@ -193,14 +247,15 @@ def write_aes(path,a):
     print('writing...')
     f = open(path,'a+')
     f.writelines('Autocorrelation simulation %s\n' % str(a))
-    f.writelines('Key: Time/steps Aes E E2 M M2 \n\n')
+    f.writelines('Key: Time/steps Aes E E2 M M2 \n')
 
     for i in range(a.sim[0].nt):
+        f.writelines('\n')
         f.writelines('T: {0:7.3f}\n'.format(a.sim[0].T[i]))
         for j in range(len(range(*a.steps_test))):
             f.writelines('{0:<5d} {1:<7.3f} {2:< 12.3e} {3:< 12.3e} {4:< 8.3f} {5:< 8.3f} {6:< 12.3e} {7:< 12.3e}\n'.format\
                          (a.steps[j],a.Aes[i,j],a.avE[i,j],a.avE2[i,j],a.avM[i,j],a.avM2[i,j],a.avC[i,j],a.avX[i,j]))
-        f.writelines('\n')
+    f.writelines('END')
     f.close()
     print('done')
 
@@ -222,3 +277,26 @@ def write_sim(path,a):
     f.writelines('Simulation inputs:\n'+', '.join(attrs)+'\n\n')
     f.writelines('Key: T       M       E       C       X\n')
 
+def read_aes(path):
+    """Reads in data from a write_aes file into a python object ready for
+    plotting with Td plot
+    Parameters: path of file (str)"""
+    T = []
+    steps = []
+    aes = []
+    T_ct = 0
+    with open(path) as f:
+        lines = f.readlines()
+    for i, val in enumerate(lines):
+        if val == '\n':
+            T.append(float(lines[i+1].split()[1]))
+            steps.append([])
+            aes.append([])
+            j = i+2
+            while j < len(lines) and lines[j] != '\n' and lines[j] != 'END':
+                steps[T_ct].append(int(lines[j].split()[0]))
+                aes[T_ct].append(float(lines[j].split()[1]))
+                j += 1
+            T_ct += 1
+            print(T_ct)
+    return(T,steps,aes)
