@@ -215,27 +215,33 @@ def Td_plot(simulation):
     plt.ylabel("Susceptibility", fontsize=20);   plt.axis('tight');
     return(f)
 
-def aes_plot(T,steps,aes):
+def aes_plot(T,steps,aes,data):
     '''Quickly plots aes lines from write aes output
     Parameters:
     T : list of Temperature points
     steps: list for the time axis (in units of simulation steps)
-    aes: list of values of the autocorrelation function'''
-    x,y = aux.post_fit(*args,slice(0,-1))
-    f = plt.figure(figsize=(10, 10)) 
-
+    aes: list of values of the autocorrelation function
+    data : slice object choosing the data that you want to fit to
+    n.b. ignore the start as non-exponential and the end as statistically
+    errored'''
+    x,y = post_fit(T,steps,aes,data)
+    f = plt.figure(figsize=(6, 6))
+    f.suptitle('Autocorrelation vs. time')
     sp =  f.add_subplot(1, 2, 1 );
-    for i in T:
-        plt.scatter(steps, aes, s=10, marker='x')
+    for i in range(len(T)):
+        plt.scatter(steps[0], aes[i], marker='x')
+        plt.plot(x,np.e**y[i])
         plt.xlabel("Steps", fontsize=20);
-        plt.ylabel("Autocorrelation decay_function", fontsize=20);  plt.axis('tight');
+        plt.ylabel("Autocorrelation function", fontsize=20);  plt.axis('tight');
 
     sp =  f.add_subplot(1, 2, 2 );
-    for i in T:
-        plt.scatter(steps, aes, s=10, marker='x')
-        plt.xlabel("Steps", fontsize=20);
-        plt.ylabel("Autocorrelation decay_function", fontsize=20);  plt.axis('tight');
-        plt.yscale('log')
+    for i in range(len(T)):
+        plt.scatter(steps[0], aes[i], marker='x',\
+                    label='{0:4.2f}'.format(T[i]))
+        plt.plot(x,np.e**y[i])
+    plt.xlabel("Steps", fontsize=16);
+    plt.yscale('log')
+    plt.legend(bbox_to_anchor=(1,1),title='Temperature / K')
 
     return(f)
 
