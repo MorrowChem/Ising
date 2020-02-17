@@ -1,7 +1,7 @@
 import numpy as np
 from core import *
 from matplotlib import pyplot as plt
-from scipy import optimize
+
 import random
 
 def initialstate(N):
@@ -47,7 +47,17 @@ class Simulation_Average():
     sim : list of instances of Simulations'''
     def __init__(self, sim):
         self.nt = sim[0].nt
+        self.N = sim[0].N
+        self.j0 = sim[0].j0
+        self.j1 = sim[0].j1
+        self.s1 = sim[0].s1
+        self.s2 = sim[0].s2
+        self.eqSteps = sim[0].eqSteps
+        self.interSteps = sim[0].interSteps 
+        self.ncalcs = sim[0].ncalcs
+        self.algo = sim[0].algo
         self.sim = sim
+        self.T = sim[0].T
         self.avE,self.avM,self.avC,self.avX =\
         np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt)
 
@@ -301,16 +311,19 @@ def write_sim(path,a):
     a          : autocorrelation_average object"""
     f = open(path,'a+')
     f.writelines('Simulation %s\n' % str(a))
-    keys = list(vars(a).keys())
-    vals = list(vars(a).values())
-    print(keys,vals)
-    attrs = []
-    for i in range(5):
-        attrs.append("{0}: {1:3.3f}".format(keys[i],vals[i]))
-    for i in range(6,15):
-        attrs.append("{0}: {1:3.3f}".format(keys[i],vals[i]))
-    f.writelines('Simulation inputs:\n'+', '.join(attrs)+'\n\n')
-    f.writelines('Key: T       M       E       C       X\n')
+    p = vars(a)
+    attrs = [p['nt'],p['N'],p['j0'],p['j1'],p['s1'],p['s2']]
+    for i in range(len(attrs)):
+        attrs[i] = str(attrs[i])
+    f.writelines('A Monte-Carlo Simulation of the Ising model with the following\
+                 parameters\n')
+    f.writelines('Simulation inputs:\n'+'nt,N,j0,j1,s1,s2')
+    f.writelines(', '.join(attrs)+'\n\n')
+    f.writelines('Key: {0:>7s} {1:>7s} {2:>12s} {3:>7s} {4:>7s}\n'.format(\
+                 'T', 'M', 'E',  'C', 'X'))
+    for i in range(a.nt):
+        f.writelines('     {0:7.3f} {1:7.3f} {2:12.4e} {3:7.3f} {4:7.3f}\n'.format(\
+                     a.T[i],a.avM[i],a.avE[i],a.avC[i],a.avX[i]))
 
 def read_aes(path):
     """Reads in data from a write_aes file into a python object ready for

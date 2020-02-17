@@ -34,6 +34,7 @@ class Simulation():
     
     def run_Met(self,config=False):
         '''Standard Metropolis algorithm '''
+        self.algo = 'Metropolis-Hastings'
         self.E,self.M,self.C,self.X = np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt)
     
         for tt in range(self.nt):
@@ -70,7 +71,7 @@ class Simulation():
         '''Wolff cluster algorithm every w_rat Metropolis steps
         Parameters:
         w_rat : the ratio of Metropolis steps to Wolff steps'''
-        
+        self.algo = 'Hybrid'
         w_int_eq = self.eqSteps//w_rat
         w_int = self.interSteps//w_rat
         print(w_int_eq,w_int)
@@ -115,6 +116,7 @@ class Simulation():
 
     def run_pure_Wolff(self,config=False):
         '''Standard Wolff algorithm '''
+        self.algo = 'Pure Wolff'
         self.E,self.M,self.C,self.X = np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt)
     
         for tt in range(self.nt):
