@@ -58,7 +58,7 @@ class Simulation_Average():
             self.avM += abs(sim[i].M*d)
             self.avC += sim[i].C*d
             self.avX += sim[i].X*d
-        print('average energy is %f\n\n' % self.avE)
+        print('average energies are ',self.avE,'\n\n')
 
 class Autocorrelation_Average():
     '''averages a list of Autocorrelation simulations performed at the same temperature points
@@ -215,6 +215,35 @@ def Td_plot(simulation):
     plt.ylabel("Susceptibility", fontsize=20);   plt.axis('tight');
     return(f)
 
+
+def Td_plot_read(T,E,M,C,X):
+    '''Quickly plots thermodynamic properties from a Simulation object
+    Parameters:
+    simulation : instance of simulation class
+    Note that this must include T,E,M,C,X attributes, which we plot'''
+    f = plt.figure(figsize=(18, 10)); # plot the calculated values    
+
+    sp =  f.add_subplot(2, 2, 1 );
+    plt.scatter(simulation.T, simulation.E, s=10, marker='o', color='IndianRed')
+    plt.xlabel("Temperature (T)", fontsize=20);
+    plt.ylabel("Energy ", fontsize=20);         plt.axis('tight');
+
+    sp =  f.add_subplot(2, 2, 2 );
+    plt.scatter(simulation.T, abs(simulation.M), s=10, marker='o', color='RoyalBlue')
+    plt.xlabel("Temperature (T)", fontsize=20);
+    plt.ylabel("Magnetization ", fontsize=20);   plt.axis('tight');
+
+    sp =  f.add_subplot(2, 2, 3 );
+    plt.scatter(simulation.T, simulation.C, s=10, marker='o', color='IndianRed')
+    plt.xlabel("Temperature (T)", fontsize=20);
+    plt.ylabel("Specific Heat ", fontsize=20);   plt.axis('tight');
+
+    sp =  f.add_subplot(2, 2, 4 );
+    plt.scatter(simulation.T, simulation.X, s=10, marker='o', color='RoyalBlue')
+    plt.xlabel("Temperature (T)", fontsize=20); 
+    plt.ylabel("Susceptibility", fontsize=20);   plt.axis('tight');
+    return(f)
+
 def aes_plot(T,steps,aes,data):
     '''Quickly plots aes lines from write aes output
     Parameters:
@@ -229,19 +258,19 @@ def aes_plot(T,steps,aes,data):
     f.suptitle('Autocorrelation vs. time')
     sp =  f.add_subplot(1, 2, 1 );
     for i in range(len(T)):
-        plt.scatter(steps[0], aes[i], marker='x')
+        plt.scatter(steps[0], aes[i], marker='x',s=2)
         plt.plot(x,np.e**y[i])
         plt.xlabel("Steps", fontsize=20);
         plt.ylabel("Autocorrelation function", fontsize=20);  plt.axis('tight');
 
     sp =  f.add_subplot(1, 2, 2 );
     for i in range(len(T)):
-        plt.scatter(steps[0], aes[i], marker='x',\
+        plt.scatter(steps[0], aes[i], marker='x', s=2,\
                     label='{0:4.2f}'.format(T[i]))
         plt.plot(x,np.e**y[i])
     plt.xlabel("Steps", fontsize=16);
     plt.yscale('log')
-    plt.legend(bbox_to_anchor=(1,1),title='Temperature / K')
+    plt.legend(title='Temperature / K')
 
     return(f)
 
@@ -290,6 +319,32 @@ def read_aes(path):
     T = []
     steps = []
     aes = []
+    T_ct = 0
+    with open(path) as f:
+        lines = f.readlines()
+    for i, val in enumerate(lines):
+        if val == '\n':
+            T.append(float(lines[i+1].split()[1]))
+            steps.append([])
+            aes.append([])
+            j = i+2
+            while j < len(lines) and lines[j] != '\n' and lines[j] != 'END':
+                steps[T_ct].append(int(lines[j].split()[0]))
+                aes[T_ct].append(float(lines[j].split()[1]))
+                j += 1
+            T_ct += 1
+            print(T_ct)
+    return(T,steps,aes)
+
+def read_sim(path):
+    """Reads in data from a write_sim file into a python object ready for
+    plotting with Td plot
+    Parameters: path of file (str)"""
+    T = []
+    E = []
+    M = []
+    C = []
+    X = []
     T_ct = 0
     with open(path) as f:
         lines = f.readlines()
