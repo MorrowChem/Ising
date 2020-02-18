@@ -3,6 +3,8 @@ from matplotlib import pyplot as plt
 from scipy import optimize
 from core import *
 from aux import *
+import random
+
 
 class Simulation():
     '''Standard MC simulation object, performs over a range of temperatures
@@ -30,8 +32,9 @@ class Simulation():
         self.j1 = j1/self.k
         self.s1 = s1
         self.s2 = s2
-        self.sav = s1*s2
-    
+        self.sav = s1 * s2
+        np.random.seed() # need to call a new random number for each run of this
+
     def run_Met(self,config=False):
         '''Standard Metropolis algorithm '''
         self.algo = 'Metropolis-Hastings'
@@ -62,7 +65,7 @@ class Simulation():
             self.C[tt] = (self.n1*E2 - self.n2*E1*E1)*iT2
             self.X[tt] = (self.n1*M2 - self.n2*M1*M1)*iT
             
-            print("%i T: %f   M: %f   E: %f   C: %f   X: %f" % \
+            print("%i T: %f   M: %f   E: %f   C: %f   X: %f met" % \
                  (tt, self.T[tt],self.M[tt],self.E[tt],self.C[tt],self.X[tt]),\
                   flush=True)
             if config:
@@ -95,8 +98,7 @@ class Simulation():
             for j in range(self.ncalcs): # heart of the run: calculate the properties
                 for a in range(w_int):
                     Wolff(self.config,iT, self.j0, self.j1, self.sav)
-                    mcmoves(self.config, iT, w_rat, self.N, self.j0, self.j1, self.sav, self.h) # perform intervening MC steps
-                #quick_config(self.config,self.N)  
+                    mcmoves(self.config, iT, w_rat, self.N, self.j0, self.j1, self.sav, self.h)
                 Ene = calcEnergy(self.config, self.j0, self.j1, self.sav, self.h)     # calculate the energy
                 Mag = calcMag(self.config, self.s1, self.s2)        # calculate the magnetisation
 
@@ -110,7 +112,7 @@ class Simulation():
             self.C[tt] = (self.n1*E2 - self.n2*E1*E1)*iT2
             self.X[tt] = (self.n1*M2 - self.n2*M1*M1)*iT
             
-            print("%i T: %f   M: %f   E: %f   C: %f   X: %f" % \
+            print("%i T: %f   M: %f   E: %f   C: %f   X: %f hybrid" % \
                  (tt, self.T[tt],self.M[tt],self.E[tt],self.C[tt],self.X[tt]),\
                   flush = True)
             
@@ -151,7 +153,9 @@ class Simulation():
             self.C[tt] = (self.n1*E2 - self.n2*E1*E1)*iT2
             self.X[tt] = (self.n1*M2 - self.n2*M1*M1)*iT
             
-            print("%i T: %f   M: %f   E: %f   C: %f   X: %f" % (tt, self.T[tt],self.M[tt],self.E[tt],self.C[tt],self.X[tt]))
+            print("%i T: %f   M: %f   E: %f   C: %f   X: %f Wolff"\
+             % (tt, self.T[tt],self.M[tt],self.E[tt],self.C[tt],self.X[tt]),\
+                flush=True)
             if config:
                 print('Final config:\n')
                 quick_config(self.config,self.N)
@@ -206,6 +210,7 @@ class AutoCorrelation():
         self.s1 = s1
         self.s2 = s2
         self.sav = s1*s2
+        np.random.seed() # need to call a new random number for each run of this
     
     def run_Met(self,config=False):
         ''' Main simulation code employing pure metropolis algorithm
@@ -259,7 +264,7 @@ class AutoCorrelation():
 
                 self.Cf[i,k] = (self.n1*self.E2avk[i,k] - self.n2*self.Eavk[i,k]*self.Eavk[i,k])*iT2
                 self.Xf[i,k] = (self.n1*self.M2avk[i,k] - self.n2*self.Mavk[i,k]*self.Mavk[i,k])*iT
-                print(steps,self.T[i],self.Eavk[i,k]*self.kb)
+                print(steps,self.T[i],self.Eavk[i,k]*self.kb,flush=True)
             if config:
                 print('Final config:')
                 quick_config(self.config,self.N)
@@ -323,7 +328,7 @@ class AutoCorrelation():
 
                 self.Cf[i,k] = (self.n1*self.E2avk[i,k] - self.n2*self.Eavk[i,k]*self.Eavk[i,k])*iT2
                 self.Xf[i,k] = (self.n1*self.M2avk[i,k] - self.n2*self.Mavk[i,k]*self.Mavk[i,k])*iT
-                print(steps,self.T[i],self.Eavk[i,k]*self.kb)
+                print(steps,self.T[i],self.Eavk[i,k]*self.kb,flush=True)
             if config:
                 print('Final config:')
                 quick_config(self.config,self.N)
@@ -382,7 +387,7 @@ class AutoCorrelation():
 
                 self.Cf[i,k] = (self.n1*self.E2avk[i,k] - self.n2*self.Eavk[i,k]*self.Eavk[i,k])*iT2
                 self.Xf[i,k] = (self.n1*self.M2avk[i,k] - self.n2*self.Mavk[i,k]*self.Mavk[i,k])*iT
-                print(steps,self.T[i],self.Eavk[i,k]*self.kb)
+                print(steps,self.T[i],self.Eavk[i,k]*self.kb,flush=True)
             if config:
                 print('Final config:')
                 quick_config(self.config,self.N)
