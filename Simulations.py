@@ -62,7 +62,9 @@ class Simulation():
             self.C[tt] = (self.n1*E2 - self.n2*E1*E1)*iT2
             self.X[tt] = (self.n1*M2 - self.n2*M1*M1)*iT
             
-            print("%i T: %f   M: %f   E: %f   C: %f   X: %f" % (tt, self.T[tt],self.M[tt],self.E[tt],self.C[tt],self.X[tt]))
+            print("%i T: %f   M: %f   E: %f   C: %f   X: %f" % \
+                 (tt, self.T[tt],self.M[tt],self.E[tt],self.C[tt],self.X[tt]),\
+                  flush=True)
             if config:
                 print('Final config:\n')
                 quick_config(self.config,self.N)       
@@ -108,7 +110,9 @@ class Simulation():
             self.C[tt] = (self.n1*E2 - self.n2*E1*E1)*iT2
             self.X[tt] = (self.n1*M2 - self.n2*M1*M1)*iT
             
-            print("%i T: %f   M: %f   E: %f   C: %f   X: %f" % (tt, self.T[tt],self.M[tt],self.E[tt],self.C[tt],self.X[tt]))
+            print("%i T: %f   M: %f   E: %f   C: %f   X: %f" % \
+                 (tt, self.T[tt],self.M[tt],self.E[tt],self.C[tt],self.X[tt]),\
+                  flush = True)
             
             if config:
                 print('Final config:\n')
