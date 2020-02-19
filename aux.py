@@ -76,7 +76,8 @@ class Simulation_Average():
             self.avM2 += abs(sim[i].M**2*d)
             self.avC2 += sim[i].C**2*d
             self.avX2 += sim[i].X**2*d
-        self.sig = (self.avE2 - self.avE**2)**0.5
+        self.sigE = (self.avE2 - self.avE**2)**0.5
+        self.sigC = (self.avC2 - self.avC**2)**0.5
         print('average energies are ',self.avE,'\n')
         print('std deviations are ',self.sig)
 
