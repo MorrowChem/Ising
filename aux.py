@@ -62,6 +62,8 @@ class Simulation_Average():
         self.T = sim[0].T
         self.avE,self.avM,self.avC,self.avX =\
         np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt)
+        self.avE2,self.avM2,self.avC2,self.avX2 =\
+        np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt),np.zeros(self.nt)
 
         d = 1/len(sim)
 
@@ -70,7 +72,13 @@ class Simulation_Average():
             self.avM += abs(sim[i].M*d)
             self.avC += sim[i].C*d
             self.avX += sim[i].X*d
-        print('average energies are ',self.avE,'\n\n')
+            self.avE2 += sim[i].E**2*d
+            self.avM2 += abs(sim[i].M**2*d)
+            self.avC2 += sim[i].C**2*d
+            self.avX2 += sim[i].X**2*d
+        self.sig = (self.avE2 - self.avE**2)**0.5
+        print('average energies are ',self.avE,'\n')
+        print('std deviations are ',self.sig)
 
 class Autocorrelation_Average():
     '''averages a list of Autocorrelation simulations performed at the same temperature points
