@@ -1,6 +1,7 @@
 import numpy as np
 from core import *
 from matplotlib import pyplot as plt
+import os
 
 import random
 
@@ -40,6 +41,7 @@ def quick_config(config,N):
     plt.axis('tight')
     plt.clim(-2,2)
     plt.show()
+    return(f)
 
 class Simulation_Average():
     '''Averages a list of simulations performed at the same T points
@@ -227,29 +229,33 @@ def Td_plot(simulation):
 
 
 def Td_plot_read(T,E,M,C,X):
-    '''Quickly plots thermodynamic properties from a Simulation object
+    '''Quickly plots thermodynamic properties from raw data read from file
     Parameters:
-    simulation : instance of simulation class
-    Note that this must include T,E,M,C,X attributes, which we plot'''
+    T
+    E
+    M
+    C
+    X (all list objects)'''
+    M = np.array(M) # so it can be passed to abs as an array
     f = plt.figure(figsize=(18, 10)); # plot the calculated values    
 
     sp =  f.add_subplot(2, 2, 1 );
-    plt.scatter(simulation.T, simulation.E, s=10, marker='o', color='IndianRed')
+    plt.scatter(T, E, s=10, marker='o', color='IndianRed')
     plt.xlabel("Temperature (T)", fontsize=20);
     plt.ylabel("Energy ", fontsize=20);         plt.axis('tight');
 
     sp =  f.add_subplot(2, 2, 2 );
-    plt.scatter(simulation.T, abs(simulation.M), s=10, marker='o', color='RoyalBlue')
+    plt.scatter(T, abs(M), s=10, marker='o', color='RoyalBlue')
     plt.xlabel("Temperature (T)", fontsize=20);
     plt.ylabel("Magnetization ", fontsize=20);   plt.axis('tight');
 
     sp =  f.add_subplot(2, 2, 3 );
-    plt.scatter(simulation.T, simulation.C, s=10, marker='o', color='IndianRed')
+    plt.scatter(T, C, s=10, marker='o', color='IndianRed')
     plt.xlabel("Temperature (T)", fontsize=20);
     plt.ylabel("Specific Heat ", fontsize=20);   plt.axis('tight');
 
     sp =  f.add_subplot(2, 2, 4 );
-    plt.scatter(simulation.T, simulation.X, s=10, marker='o', color='RoyalBlue')
+    plt.scatter(T, X, s=10, marker='o', color='RoyalBlue')
     plt.xlabel("Temperature (T)", fontsize=20); 
     plt.ylabel("Susceptibility", fontsize=20);   plt.axis('tight');
     return(f)
@@ -317,13 +323,27 @@ def write_sim(path,a):
         attrs[i] = str(attrs[i])
     f.writelines('A Monte-Carlo Simulation of the Ising model with the following\
                  parameters\n')
-    f.writelines('Simulation inputs:\n'+'nt,N,j0,j1,s1,s2')
+    f.writelines('Simulation inputs:\n'+'nt,N,j0,j1,s1,s2\n')
     f.writelines(', '.join(attrs)+'\n\n')
     f.writelines('Key: {0:>7s} {1:>7s} {2:>12s} {3:>7s} {4:>7s}\n'.format(\
                  'T', 'M', 'E',  'C', 'X'))
     for i in range(a.nt):
         f.writelines('     {0:7.3f} {1:7.3f} {2:12.4e} {3:7.3f} {4:7.3f}\n'.format(\
                      a.T[i],a.avM[i],a.avE[i],a.avC[i],a.avX[i]))
+def sim_amalg(path):
+    '''Collects simulation data from a folder full of individual text files from
+    parallel simulations.
+    Paramters: 
+        path to file (str)
+    Returns:
+    data - 5xN array with T,M,E,C,X lists'''
+    
+    
+    data = [[] for i in range(5)]
+    for i in os.listdir(path):
+        for j in range(5):
+            data[j].extend(read_sim(i)[j])
+    return(data)
 
 def read_aes(path):
     """Reads in data from a write_aes file into a python object ready for
@@ -358,19 +378,19 @@ def read_sim(path):
     M = []
     C = []
     X = []
-    T_ct = 0
     with open(path) as f:
         lines = f.readlines()
     for i, val in enumerate(lines):
-        if val == '\n':
-            T.append(float(lines[i+1].split()[1]))
-            steps.append([])
-            aes.append([])
-            j = i+2
-            while j < len(lines) and lines[j] != '\n' and lines[j] != 'END':
-                steps[T_ct].append(int(lines[j].split()[0]))
-                aes[T_ct].append(float(lines[j].split()[1]))
+        print(val)
+        if 'Key:' in val:
+            j = i+1
+            while j < len(lines) and lines[j].split()[0] != '\n' :
+                dat = lines[j].split()
+                T.append(float(dat[0]))
+                M.append(float(dat[1]))
+                E.append(float(dat[2]))
+                C.append(float(dat[3]))
+                X.append(float(dat[4]))
                 j += 1
-            T_ct += 1
-            print(T_ct)
-    return(T,steps,aes)
+            break
+    return(T,E,M,C,X)

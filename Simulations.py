@@ -33,7 +33,7 @@ class Simulation():
         self.s1 = s1
         self.s2 = s2
         self.sav = s1 * s2
-        np.random.seed() # need to call a new random number for each run of this
+        self.rg = np.random.Generator(np.random.PCG64()) # set up the RNG
 
     def run_Met(self,config=False):
         '''Standard Metropolis algorithm '''
@@ -51,7 +51,8 @@ class Simulation():
                 quick_config(self.config,self.N)
             
             for i in range(self.ncalcs):
-                mcmoves(self.config, iT, self.interSteps, self.N, self.j0, self.j1, self.sav, self.h) # Perform intervening MC steps       
+                mcmoves(self.config, iT, self.interSteps, self.N, self.j0, self.j1,\
+                        self.sav, self.h) # Perform intervening MC steps       
                 Ene = calcEnergy(self.config, self.j0, self.j1, self.sav, self.h)     # calculate the energy
                 Mag = calcMag(self.config, self.s1, self.s2)        # calculate the magnetisation
 
@@ -210,7 +211,7 @@ class AutoCorrelation():
         self.s1 = s1
         self.s2 = s2
         self.sav = s1*s2
-        np.random.seed() # need to call a new random number for each run of this
+        self.rg = np.random.Generator(np.random.PCG64()) # set up the RNG
     
     def run_Met(self,config=False):
         ''' Main simulation code employing pure metropolis algorithm
