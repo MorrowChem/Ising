@@ -302,7 +302,7 @@ def Td_plot_read(T,E,M,C,X):
     plt.ylabel("Susceptibility", fontsize=20);   plt.axis('tight');
     return(f)
 
-def aes_plot(T,steps,aes,data):
+def aes_plot(T,steps,aes,cavs,data):
     '''Quickly plots aes lines from write aes output
     Parameters:
     T : list of Temperature points
@@ -316,6 +316,7 @@ def aes_plot(T,steps,aes,data):
     f.suptitle('Autocorrelation vs. time')
     sp =  f.add_subplot(1, 2, 1 );
     for i in range(len(T)):
+        x[i] = x[i]*cavs[i] # scale the time coordinate
         plt.scatter(steps[0], aes[i], marker='x',s=2)
         plt.plot(x,np.e**y[i])
         plt.xlabel("Steps", fontsize=20);
@@ -396,6 +397,7 @@ def read_aes(path):
     T = []
     steps = []
     aes = []
+    cavs = []
     T_ct = 0
     with open(path) as f:
         lines = f.readlines()
@@ -408,6 +410,7 @@ def read_aes(path):
             while j < len(lines) and lines[j] != '\n' and lines[j] != 'END':
                 steps[T_ct].append(int(lines[j].split()[0]))
                 aes[T_ct].append(float(lines[j].split()[1]))
+                cavs[T_ct].append(float(lines[j].split()[-1]))
                 j += 1
             T_ct += 1
             print(T_ct)

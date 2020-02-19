@@ -34,6 +34,7 @@ class Simulation():
         self.s2 = s2
         self.sav = s1 * s2
         self.rg = np.random.Generator(np.random.PCG64()) # set up the RNG
+        self.cavs = np.ones(self.nt)
 
     def run_Met(self,config=False):
         '''Standard Metropolis algorithm '''
