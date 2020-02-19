@@ -91,6 +91,7 @@ class Autocorrelation_Average():
         self.steps_test = sim[0].steps_test
         self.steps = np.array(range(*self.steps_test))
         self.Aes = np.zeros((self.nt,len(range(*self.steps_test))))
+        self.cavs = np.zeros(self.nt)
         self.avE,self.avE2,self.avM,self.avM2,self.avC,self.avX =\
         np.zeros((self.nt,len(range(*self.steps_test)))),\
         np.zeros((self.nt,len(range(*self.steps_test)))),\
@@ -100,8 +101,9 @@ class Autocorrelation_Average():
         np.zeros((self.nt,len(range(*self.steps_test))))
 
         d = 1/len(sim)
-
+        print(sim[0].cavs)
         for k in range(len(sim)): # evaluate the Ae for each run for each T for each value of interSteps
+            self.cavs += np.array(sim[k].cavs)*d
             for j in range(sim[k].nt):
                 for i in range(len(range(*self.steps_test))):
                     self.Aes[j,i] += Ae(sim[k].Ektav[j,i],sim[k].Eavk[j,i],

@@ -213,6 +213,7 @@ class AutoCorrelation():
         self.s2 = s2
         self.sav = s1*s2
         self.rg = np.random.Generator(np.random.PCG64()) # set up the RNG
+        
     
     def run_Met(self,config=False):
         ''' Main simulation code employing pure metropolis algorithm
@@ -230,6 +231,7 @@ class AutoCorrelation():
                                                         np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
                                                         np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
                                                         np.zeros((self.nt,self.q))
+        self.cavs = np.ones(self.nt) # cluster sizes - 1 by definition for met
         for i in range(self.nt):
             self.config = initialstate(self.N) # new random configuration for each T
             iT = 1.0/self.T[i]
