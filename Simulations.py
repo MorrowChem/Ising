@@ -90,7 +90,7 @@ class Simulation():
             iT=1.0/self.T[tt]; iT2=iT*iT;  # Calculate the 1/T values                                                
             
             for a in range(w_int_eq): # equilibration
-                Wolff(self.config,iT, self.j0, self.j1, self.sav)
+                Wolff(self.config,iT, self.j0, self.j1, self.sav, self.rg)
                 mcmoves(self.config, iT, w_rat, self.N, self.j0, self.j1, self.sav, self.h) 
             if config:
                 print('config after equilibration: %i' % tt)
@@ -98,7 +98,7 @@ class Simulation():
             
             for j in range(self.ncalcs): # heart of the run: calculate the properties
                 for a in range(w_int):
-                    Wolff(self.config,iT, self.j0, self.j1, self.sav)
+                    Wolff(self.config,iT, self.j0, self.j1, self.sav, self.rg)
                     mcmoves(self.config, iT, w_rat, self.N, self.j0, self.j1, self.sav, self.h)
                 Ene = calcEnergy(self.config, self.j0, self.j1, self.sav, self.h)     # calculate the energy
                 Mag = calcMag(self.config, self.s1, self.s2)        # calculate the magnetisation
@@ -132,7 +132,7 @@ class Simulation():
             iT=1.0/self.T[tt]; iT2=iT*iT;  # Calculate the 1/T values                                                
             
             for i in range(self.eqSteps):
-                Wolff(self.config, iT, self.j0, self.j1, self.sav) # Equilibrate
+                Wolff(self.config, iT, self.j0, self.j1, self.sav, self.rg) # Equilibrate
             
             if config:
                 print('Config after equilibration:\n')
@@ -140,7 +140,7 @@ class Simulation():
             
             for i in range(self.ncalcs):
                 for j in range(self.interSteps):
-                    Wolff(self.config, iT, self.j0, self.j1, self.sav) # Perform intervening MC steps       
+                    Wolff(self.config, iT, self.j0, self.j1, self.sav, self.rg) # Perform intervening MC steps       
                 Ene = calcEnergy(self.config, self.j0, self.j1, self.sav, self.h)     # calculate the energy
                 Mag = calcMag(self.config, self.s1, self.s2)        # calculate the magnetisation
 
@@ -277,24 +277,30 @@ class AutoCorrelation():
         w_int_eq = self.eqSteps//w_rat
         steps_list = list(range(*self.steps_test)) # the values for the intervening steps
         # Initialise the lists we're going to use to store our data
-        self.Es,self.E2s,self.Ms,self.M2s,self.Ekts = np.zeros((self.nt,self.q,self.ncalcs)),np.zeros((self.nt,self.q,self.ncalcs)),\
-                                                      np.zeros((self.nt,self.q,self.ncalcs)),np.zeros((self.nt,self.q,self.ncalcs)),\
-                                                      np.zeros((self.nt,self.q,self.ncalcs))
+        self.Es,self.E2s,self.Ms,self.M2s,self.Ekts = \
+        np.zeros((self.nt,self.q,self.ncalcs)),\
+        np.zeros((self.nt,self.q,self.ncalcs)),\
+        np.zeros((self.nt,self.q,self.ncalcs)),\
+        np.zeros((self.nt,self.q,self.ncalcs)),\
+        np.zeros((self.nt,self.q,self.ncalcs))
 
         self.Eavk,self.E2avk,self.Ektav,self.Mavk,self.M2avk,self.Cf,self.Xf =\
-                                                        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
-                                                        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
-                                                        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
-                                                        np.zeros((self.nt,self.q))
+        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
+        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
+        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
+        np.zeros((self.nt,self.q))
+        
+        self.cavs = np.zeros(self.nt) # average cluster sizes
         
         for i in range(self.nt):
             self.config = initialstate(self.N) # new config for each T
             iT = 1.0/self.T[i]
             iT2 = iT**2
-            
+            cs = [] # list of cluster sizes
             for a in range(w_int_eq): # equilibration
-                Wolff(self.config,iT, self.j0, self.j1, self.sav)
-                mcmoves(self.config, iT, w_rat, self.N, self.j0, self.j1, self.sav, self.h) 
+                Wolff(self.config,iT, self.j0, self.j1, self.sav, self.rg)
+                mcmoves(self.config, iT, w_rat, self.N, self.j0, 
+                                   self.j1, self.sav, self.h)
             if config:
                 print('config after equilibration: %i' % i)
                 quick_config(self.config,self.N)   
@@ -311,7 +317,7 @@ class AutoCorrelation():
 
                 for j in range(1,self.ncalcs): # heart of the run: calculate the properties
                     for a in range(w_int):
-                        Wolff(self.config,iT, self.j0, self.j1, self.sav)
+                        cs.append(Wolff(self.config,iT, self.j0, self.j1, self.sav, self.rg))
                         ind_mcmoves(self.config, iT, min(steps,w_rat), self.N, self.j0, self.j1, self.sav, self.h) # perform intervening MC steps
                     Ene = calcEnergy(self.config,self.j0,self.j1,self.sav,self.h) # Calculate the energy
                     Mag = calcMag(self.config,self.s1,self.s2) # Calculate the magnetisation
@@ -330,6 +336,8 @@ class AutoCorrelation():
                 self.Cf[i,k] = (self.n1*self.E2avk[i,k] - self.n2*self.Eavk[i,k]*self.Eavk[i,k])*iT2
                 self.Xf[i,k] = (self.n1*self.M2avk[i,k] - self.n2*self.Mavk[i,k]*self.Mavk[i,k])*iT
                 print(steps,self.T[i],self.Eavk[i,k]*self.kb,flush=True)
+            
+            self.cavs[i] = sum(cs)/len(cs) # calculate average cluster size
             if config:
                 print('Final config:')
                 quick_config(self.config,self.N)
@@ -341,21 +349,27 @@ class AutoCorrelation():
         '''
         steps_list = list(range(self.steps_test[0],self.steps_test[1],self.steps_test[2])) # the values for the intervening steps
         # Initialise the lists we're going to use to store our data
-        self.Es,self.E2s,self.Ms,self.M2s,self.Ekts = np.zeros((self.nt,self.q,self.ncalcs)),np.zeros((self.nt,self.q,self.ncalcs)),\
-                                                      np.zeros((self.nt,self.q,self.ncalcs)),np.zeros((self.nt,self.q,self.ncalcs)),\
-                                                      np.zeros((self.nt,self.q,self.ncalcs))
+        self.Es,self.E2s,self.Ms,self.M2s,self.Ekts = \
+        np.zeros((self.nt,self.q,self.ncalcs)),\
+        np.zeros((self.nt,self.q,self.ncalcs)),\
+        np.zeros((self.nt,self.q,self.ncalcs)),\
+        np.zeros((self.nt,self.q,self.ncalcs)),\
+        np.zeros((self.nt,self.q,self.ncalcs))
 
         self.Eavk,self.E2avk,self.Ektav,self.Mavk,self.M2avk,self.Cf,self.Xf =\
-                                                        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
-                                                        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
-                                                        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
-                                                        np.zeros((self.nt,self.q))
+        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
+        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
+        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
+        np.zeros((self.nt,self.q))
+        
+        self.cavs = np.zeros(self.nt) # average cluster sizes
+        
         for i in range(self.nt):
             self.config = initialstate(self.N) # sets new random configuration for each temperature evaluation
             iT = 1.0/self.T[i]
             iT2 = iT**2
             for j in range(self.eqSteps):
-                Wolff(self.config, iT, self.j0, self.j1, self.sav) # equilibration
+                Wolff(self.config, iT, self.j0, self.j1, self.sav, self.rg) # equilibration
             if config:
                 print('config after equilibration: %i' % i)
                 quick_config(self.config,self.N)   
@@ -371,7 +385,7 @@ class AutoCorrelation():
 
                 for j in range(1,self.ncalcs): # heart of the run: calculate the properties
                     for l in range(steps):
-                        Wolff(self.config, iT, self.j0, self.j1, self.sav) # perform intervening MC steps
+                        cs.append(Wolff(self.config, iT, self.j0, self.j1, self.sav, self.rg)) # perform intervening MC steps
                     Ene = calcEnergy(self.config,self.j0,self.j1,self.sav,self.h) # Calculate the energy
                     Mag = calcMag(self.config,self.s1,self.s2) # Calculate the magnetisation
                     self.Es[i,k,j] = Ene      # add these values and their squares to the appropriate lists 
@@ -389,6 +403,8 @@ class AutoCorrelation():
                 self.Cf[i,k] = (self.n1*self.E2avk[i,k] - self.n2*self.Eavk[i,k]*self.Eavk[i,k])*iT2
                 self.Xf[i,k] = (self.n1*self.M2avk[i,k] - self.n2*self.Mavk[i,k]*self.Mavk[i,k])*iT
                 print(steps,self.T[i],self.Eavk[i,k]*self.kb,flush=True)
+            
+            self.cavs[i] = sum(cs)/len(cs) # calculate average cluster size
             if config:
                 print('Final config:')
                 quick_config(self.config,self.N)

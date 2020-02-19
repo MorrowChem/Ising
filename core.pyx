@@ -47,6 +47,7 @@ def mcmoves(int [:,::1] config, float beta, int steps, int N, float j0, float j1
         int [:,::1] rands
         float [:,::1] randfloat 
         float [::1] cost_lookup
+    rg = np.random.Generator(np.random.PCG64())
     ### Lookup table for the exponentials #####
     cost_lookup = 2.7182818**(-2*beta*sav*(np.array([-(-2*j0-2*j1),
                                                   -(-2*j0+0*j1),
@@ -69,8 +70,8 @@ def mcmoves(int [:,::1] config, float beta, int steps, int N, float j0, float j1
                                                   ( 2*j0+2*j1),
                                                   ]))).astype('float32')
     for k in range(steps):
-        rands = np.random.randint(N, size=(N,2*N), dtype='int32')
-        randfloat = np.random.rand(N,N).astype('float32')
+        rands = rg.integers(0,N, size=(N,2*N), dtype='int32')
+        randfloat = rg.random((N,N), dtype='float32')
         for i in range(N): 
             for j in range(N):
                 a = rands[i,j] 
@@ -101,6 +102,7 @@ def ind_mcmoves(int [:,::1] config, float beta, int steps, int N, float j0, floa
         int [:,::1] rands 
         float [::1] randfloat
         float [::1] cost_lookup
+    rg = np.random.Generator(np.random.PCG64())
     ### Lookup table for the exponentials #####
     cost_lookup = 2.7182818**(-2*beta*sav*(np.array([-(-2*j0-2*j1),
                                                   -(-2*j0+0*j1),
@@ -122,8 +124,8 @@ def ind_mcmoves(int [:,::1] config, float beta, int steps, int N, float j0, floa
                                                   ( 2*j0+0*j1),
                                                   ( 2*j0+2*j1),
                                                   ]))).astype('float32')
-    rands = np.random.randint(N, size=(2,2*steps)).astype('int32')
-    randfloat = np.random.rand(steps).astype('float32')
+    rands = rg.random(0,N, size=(2,2*steps), dtype='int32')
+    randfloat = rg.random(steps,dtype='float32')
     for k in range(steps):
         a = rands[0,k] 
         b = rands[1,-k-1] 

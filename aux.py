@@ -2,8 +2,8 @@ import numpy as np
 from core import *
 from matplotlib import pyplot as plt
 import os
-
 import random
+
 
 def initialstate(N):
     '''Generates a random spin configuration
@@ -83,16 +83,20 @@ class Autocorrelation_Average():
         self.steps = np.array(range(*self.steps_test))
         self.Aes = np.zeros((self.nt,len(range(*self.steps_test))))
         self.avE,self.avE2,self.avM,self.avM2,self.avC,self.avX =\
-        np.zeros((self.nt,len(range(*self.steps_test)))),np.zeros((self.nt,len(range(*self.steps_test)))),\
-        np.zeros((self.nt,len(range(*self.steps_test)))),np.zeros((self.nt,len(range(*self.steps_test)))),\
-        np.zeros((self.nt,len(range(*self.steps_test)))),np.zeros((self.nt,len(range(*self.steps_test))))
+        np.zeros((self.nt,len(range(*self.steps_test)))),\
+        np.zeros((self.nt,len(range(*self.steps_test)))),\
+        np.zeros((self.nt,len(range(*self.steps_test)))),\
+        np.zeros((self.nt,len(range(*self.steps_test)))),\
+        np.zeros((self.nt,len(range(*self.steps_test)))),\
+        np.zeros((self.nt,len(range(*self.steps_test))))
 
         d = 1/len(sim)
 
         for k in range(len(sim)): # evaluate the Ae for each run for each T for each value of interSteps
             for j in range(sim[k].nt):
                 for i in range(len(range(*self.steps_test))):
-                    self.Aes[j,i] += Ae(sim[k].Ektav[j,i],sim[k].Eavk[j,i],sim[k].E2avk[j,i])*d 
+                    self.Aes[j,i] += Ae(sim[k].Ektav[j,i],sim[k].Eavk[j,i],
+                            sim[k].E2avk[j,i])*d 
                     self.avE[j,i] += sim[k].Eavk[j,i]*d
                     self.avE2[j,i] += sim[k].E2avk[j,i]*d
                     self.avM[j,i] += sim[k].Mavk[j,i]*d
@@ -111,7 +115,8 @@ def auto_fit(auto_av,data):
     Parameters:
     auto_av : instance from Autocorrelation_Average class
     data = slice object,
-    choose the data you want to fit too (often the large steps limit is dominated by statistical errors)
+    choose the data you want to fit too 
+    (often the large steps limit is dominated by statistical errors)
 
     Returns:
     None
@@ -126,9 +131,10 @@ def auto_fit(auto_av,data):
 
     for i in range(0,len(auto_av.sim[0].T)):
         params[i], params_cov = optimize.curve_fit(decay_function,\
-                                          auto_av.steps[data],\
-                                          np.log(np.ma.masked_less(Aes[i][data],0).filled(fill_value=1e-5)),\
-                                          p0=[-0.015,-0.5])
+                                  auto_av.steps[data],\
+                                  np.log(np.ma.masked_less(Aes[i][data],0)\
+                                 .filled(fill_value=1e-5)),\
+                                  p0=[-0.015,-0.5])
     print(params)
     print(1/params.T[0])
 
@@ -157,9 +163,10 @@ def post_fit(T,steps,aes,data):
 
     for i in range(0,len(T)):
         params[i], params_cov = optimize.curve_fit(decay_function,\
-                                          steps[0][data],\
-                                          np.log(np.ma.masked_less(aes[i][data],0).filled(fill_value=1e-5)),\
-                                          p0=[-0.015,-0.5])
+                              steps[0][data],\
+                              np.log(np.ma.masked_less(aes[i][data],0).\
+                                     filled(fill_value=1e-5)),\
+                              p0=[-0.015,-0.5])
     print(params)
     print(1/params.T[0])
     x = np.array(steps[0])
@@ -169,15 +176,15 @@ def post_fit(T,steps,aes,data):
         y.append(decay_function(x,params[i][0],params[i][1]))
     return(x,y)
 
-def Wolff(config,beta,j0,j1,sav):
+def Wolff_old(config,beta,j0,j1,sav):
     '''Simple implementation of Wolff cluster algorithm
     Parameters:
     config : conifguration to be updated
     beta   : 1/T, designed to be done in K^-1 units
     j0 : horizontal coupling constant
     j1 : vertical coupling constant
-    sav : product of the spins on different sites
-    '''
+    sav : product of the spins on different sites'''
+    
     N = len(config)
     E0 = 1 - np.exp(-2*beta*j0*sav) # pre-calculate expensive functions
     E1 = 1 - np.exp(-2*beta*j1*sav)
@@ -198,6 +205,41 @@ def Wolff(config,beta,j0,j1,sav):
                     config[j[1],j[2]] *= -1
         cluster.pop(0) # remove cluster item once considered, so not done twice      
         n += 1
+        
+def Wolff(config,beta,j0,j1,sav,rg):
+    '''Simple implementation of Wolff cluster algorithm
+    Parameters:
+    config : conifguration to be updated
+    beta   : 1/T, designed to be done in K^-1 units
+    j0 : horizontal coupling constant
+    j1 : vertical coupling constant
+    sav : product of the spins on different sites
+    rs : random number generator state
+    '''
+    N = len(config)
+    E0 = 1 - np.exp(-2*beta*j0*sav) # pre-calculate expensive functions
+    E1 = 1 - np.exp(-2*beta*j1*sav)
+    r1 = rg.integers(0,N) # darts to start
+    r2 = rg.integers(0,N)
+    rand = rg.random(4*N**2)
+    cluster = [[config[r1,r2], r1, r2]]
+    config[r1,r2] *= -1 # must flip the very first one here, doesn't affect value in cluster
+    n = 0
+    c = 0
+    while cluster:
+        for counter,j in enumerate(get_NN(cluster[0],config,N)):
+            if counter < 2: # two separate acceptance criteria needed for inequivalent directions
+                if j[0]*cluster[0][0] > 0 and E0 > rand[n]:
+                    cluster.append((config[j[1],j[2]],j[1],j[2]))
+                    config[j[1],j[2]] *= -1 # trick: immediately flip spin once added to the cluster, removes need to check if spin is in cluster and invert at the end 
+            else:
+                if j[0]*cluster[0][0] > 0 and E1 > rand[n]:
+                    cluster.append((config[j[1],j[2]],j[1],j[2])) # key to append to cluster first, then flip the spin (otherwise breaks the next loop spin-equivalence check)
+                    config[j[1],j[2]] *= -1
+            n += 1
+        cluster.pop(0) # remove cluster item once considered, so not done twice      
+        c += 1
+    return(c)
 
 def Td_plot(simulation):
     '''Quickly plots thermodynamic properties from a Simulation object
@@ -298,14 +340,16 @@ def write_aes(path,a):
     print('writing...')
     f = open(path,'a+')
     f.writelines('Autocorrelation simulation %s\n' % str(a))
-    f.writelines('Key: Time/steps Aes E E2 M M2 \n')
+    f.writelines('Key: Time/steps Aes E E2 M M2 <C>\n')
 
     for i in range(a.sim[0].nt):
         f.writelines('\n')
         f.writelines('T: {0:7.3f}\n'.format(a.sim[0].T[i]))
         for j in range(len(range(*a.steps_test))):
-            f.writelines('{0:<5d} {1:<7.3f} {2:< 12.3e} {3:< 12.3e} {4:< 8.3f} {5:< 8.3f} {6:< 12.3e} {7:< 12.3e}\n'.format\
-                         (a.steps[j],a.Aes[i,j],a.avE[i,j],a.avE2[i,j],a.avM[i,j],a.avM2[i,j],a.avC[i,j],a.avX[i,j]))
+            f.writelines('{0:<5d} {1:<7.3f} {2:< 12.3e} {3:< 12.3e}' + 
+                         '{4:< 8.3f} {5:< 8.3f} {6:< 12.3e} {7:< 12.3e} {8:<8.3f}\n'\
+                         .format(a.steps[j],a.Aes[i,j],a.avE[i,j],a.avE2[i,j],
+                         a.avM[i,j],a.avM2[i,j],a.avC[i,j],a.avX[i,j],a.cavs[i]))
     f.writelines('END')
     f.close()
     print('done')
@@ -342,7 +386,7 @@ def sim_amalg(path):
     data = [[] for i in range(5)]
     for i in os.listdir(path):
         for j in range(5):
-            data[j].extend(read_sim(i)[j])
+            data[j].extend(read_sim(path+i)[j])
     return(data)
 
 def read_aes(path):
