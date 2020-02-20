@@ -425,7 +425,7 @@ def read_aes(path):
                 j += 1
             T_ct += 1
             print(T_ct)
-    return(T,steps,aes)
+    return(T,steps,aes,cavs)
 
 def read_sim(path):
     """Reads in data from a write_sim file into a python object ready for
