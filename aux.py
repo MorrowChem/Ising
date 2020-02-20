@@ -417,11 +417,11 @@ def read_aes(path):
             T.append(float(lines[i+1].split()[1]))
             steps.append([])
             aes.append([])
+            cavs.append(float(lines[i+2].split()[-1]))
             j = i+2
             while j < len(lines) and lines[j] != '\n' and lines[j] != 'END':
                 steps[T_ct].append(int(lines[j].split()[0]))
                 aes[T_ct].append(float(lines[j].split()[1]))
-                cavs[T_ct].append(float(lines[j].split()[-1]))
                 j += 1
             T_ct += 1
             print(T_ct)

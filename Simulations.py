@@ -300,6 +300,8 @@ class AutoCorrelation():
             iT = 1.0/self.T[i]
             iT2 = iT**2
             cs = [] # list of cluster sizes
+            mcmoves(self.config, iT, self.eqSteps, self.N, self.j0, 
+                                   self.j1, self.sav, self.h)
             for a in range(w_int_eq): # equilibration
                 Wolff(self.config,iT, self.j0, self.j1, self.sav, self.rg)
                 mcmoves(self.config, iT, w_rat, self.N, self.j0, 
@@ -369,7 +371,7 @@ class AutoCorrelation():
         self.cavs = np.zeros(self.nt) # average cluster sizes
         
         for i in range(self.nt):
-            self.config = initialstate(self.N) # sets new random configuration for each temperature evaluation
+            self.config = orderedstate(self.N) # sets new random configuration for each temperature evaluation
             iT = 1.0/self.T[i]
             iT2 = iT**2
             cs = [] # list of cluster sizes
@@ -407,7 +409,7 @@ class AutoCorrelation():
 
                 self.Cf[i,k] = (self.n1*self.E2avk[i,k] - self.n2*self.Eavk[i,k]*self.Eavk[i,k])*iT2
                 self.Xf[i,k] = (self.n1*self.M2avk[i,k] - self.n2*self.Mavk[i,k]*self.Mavk[i,k])*iT
-                print(steps,self.T[i],self.Eavk[i,k]*self.kb,flush=True)
+                print(steps,self.T[i],self.Eavk[i,k]*self.kb,self.Mavk[i,k],flush=True)
             
             self.cavs[i] = sum(cs)/len(cs) # calculate average cluster size
             if config:
