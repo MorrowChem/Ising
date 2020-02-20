@@ -321,7 +321,7 @@ class AutoCorrelation():
                 for j in range(1,self.ncalcs): # heart of the run: calculate the properties
                     for a in range(w_int):
                         cs.append(Wolff(self.config,iT, self.j0, self.j1, self.sav, self.rg))
-                        cs.extend([1 for i in range(min(steps,wrat))])
+                        cs.extend([1 for i in range(min(steps,w_rat))])
                         ind_mcmoves(self.config, iT, min(steps,w_rat), self.N, self.j0, self.j1, self.sav, self.h) # perform intervening MC steps
                     Ene = calcEnergy(self.config,self.j0,self.j1,self.sav,self.h) # Calculate the energy
                     Mag = calcMag(self.config,self.s1,self.s2) # Calculate the magnetisation
@@ -372,6 +372,7 @@ class AutoCorrelation():
             self.config = initialstate(self.N) # sets new random configuration for each temperature evaluation
             iT = 1.0/self.T[i]
             iT2 = iT**2
+            cs = [] # list of cluster sizes
             for j in range(self.eqSteps):
                 Wolff(self.config, iT, self.j0, self.j1, self.sav, self.rg) # equilibration
             if config:
