@@ -359,7 +359,7 @@ def write_aes(path,a):
         f.writelines('T: {0:7.3f}\n'.format(a.sim[0].T[i]))
         for j in range(len(range(*a.steps_test))):
             f.writelines('{0:>5d} {1:>7.3f} {2:> 12.3e} {3:> 12.3e}'
-                         '{4:> 8.3f} {5:> 8.3f} {6:> 12.3e} {7:> 12.3e} {8:>8.3f}\n'
+                         '{4:> 8.3f} {5:> 8.3f} {6:> 12.3e} {7:> 12.3e} {8:> 8.3f}\n'
                          .format(a.steps[j],a.Aes[i,j],a.avE[i,j],a.avE2[i,j],
                          a.avM[i,j],a.avM2[i,j],a.avC[i,j],a.avX[i,j],a.cavs[i]))
     f.writelines('END')
