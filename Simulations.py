@@ -285,7 +285,7 @@ class AutoCorrelation():
         np.zeros((self.nt,self.q,self.ncalcs)),\
         np.zeros((self.nt,self.q,self.ncalcs)),\
         np.zeros((self.nt,self.q,self.ncalcs)),\
-        np.zeros((self.nt,self.q,self.ncalcs))
+        np.zeros((self.nt,self.q,self.ncalcs-1))
 
         self.Eavk,self.E2avk,self.Ektav,self.Mavk,self.M2avk,self.Cf,self.Xf =\
         np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
@@ -353,14 +353,14 @@ class AutoCorrelation():
         Parameters:
         config (bool) : True prints configurations after each equilibrium step and at the end of that run
         '''
-        steps_list = list(range(self.steps_test[0],self.steps_test[1],self.steps_test[2])) # the values for the intervening steps
+        steps_list = list(range(*self.steps_test)) # the values for the intervening steps
         # Initialise the lists we're going to use to store our data
         self.Es,self.E2s,self.Ms,self.M2s,self.Ekts = \
         np.zeros((self.nt,self.q,self.ncalcs)),\
         np.zeros((self.nt,self.q,self.ncalcs)),\
         np.zeros((self.nt,self.q,self.ncalcs)),\
         np.zeros((self.nt,self.q,self.ncalcs)),\
-        np.zeros((self.nt,self.q,self.ncalcs))
+        np.zeros((self.nt,self.q,self.ncalcs-1))
 
         self.Eavk,self.E2avk,self.Ektav,self.Mavk,self.M2avk,self.Cf,self.Xf =\
         np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
@@ -369,9 +369,10 @@ class AutoCorrelation():
         np.zeros((self.nt,self.q))
         
         self.cavs = np.zeros(self.nt) # average cluster sizes
-        
+        print("Steps       T           Eav^2       Ek*Ek+t     E^2av       Mav"\
+              , flush=True)
         for i in range(self.nt):
-            self.config = orderedstate(self.N) # sets new random configuration for each temperature evaluation
+            self.config = orderedstate(self.N) # more efficient to start with ordered configuration
             iT = 1.0/self.T[i]
             iT2 = iT**2
             cs = [] # list of cluster sizes
@@ -380,7 +381,6 @@ class AutoCorrelation():
             if config:
                 print('config after equilibration: %i' % i)
                 quick_config(self.config,self.N)   
-
             for k in range(self.q): # perform *steps_test* iterations of mc calcs, at different
                                              # multiples of intervening steps
                 steps = steps_list[k] # number of steps between point calculations
@@ -390,7 +390,7 @@ class AutoCorrelation():
                 self.Ms[i,k,0]   = calcMag(self.config,self.s1,self.s2)
                 self.M2s[i,k,0]  = self.Ms[i,k,0]*self.Ms[i,k,0]
 
-                for j in range(1,self.ncalcs): # heart of the run: calculate the properties
+                for j in range(self.ncalcs): # heart of the run: calculate the properties
                     for l in range(steps):
                         cs.append(Wolff(self.config, iT, self.j0, self.j1, self.sav, self.rg)) # perform intervening MC steps
                     Ene = calcEnergy(self.config,self.j0,self.j1,self.sav,self.h) # Calculate the energy
@@ -409,7 +409,12 @@ class AutoCorrelation():
 
                 self.Cf[i,k] = (self.n1*self.E2avk[i,k] - self.n2*self.Eavk[i,k]*self.Eavk[i,k])*iT2
                 self.Xf[i,k] = (self.n1*self.M2avk[i,k] - self.n2*self.Mavk[i,k]*self.Mavk[i,k])*iT
-                print(steps,self.T[i],self.Eavk[i,k]*self.kb,self.Mavk[i,k],flush=True)
+                print("{0:^12d}{1:<12.3f}{2:<12.4e}{3:<12.4e}{4:<12.4e}{5:< 12.4e}".\
+                      format(steps,self.T[i],(self.Eavk[i,k]*self.kb)**2,self.Ektav[i,k]*self.kb**2,\
+                      self.E2avk[i,k]*self.kb**2,self.Mavk[i,k],flush=True))
+                if config:
+                    print('Final config:')
+                    quick_config(self.config,self.N)
             
             self.cavs[i] = sum(cs)/len(cs) # calculate average cluster size
             if config:
