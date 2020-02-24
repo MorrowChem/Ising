@@ -96,7 +96,7 @@ class Simulation():
             if config:
                 print('config after equilibration: %i' % tt)
                 quick_config(self.config,self.N)   
-            
+
             for j in range(self.ncalcs): # heart of the run: calculate the properties
                 for a in range(w_int):
                     Wolff(self.config,iT, self.j0, self.j1, self.sav, self.rg)
@@ -232,6 +232,8 @@ class AutoCorrelation():
                                                         np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
                                                         np.zeros((self.nt,self.q))
         self.cavs = np.ones(self.nt) # cluster sizes - 1 by definition for met
+        print("Steps       T           Eav^2       Ek*Ek+t     E^2av       Mav"\
+              , flush=True)
         for i in range(self.nt):
             self.config = initialstate(self.N) # new random configuration for each T
             iT = 1.0/self.T[i]
@@ -268,7 +270,9 @@ class AutoCorrelation():
 
                 self.Cf[i,k] = (self.n1*self.E2avk[i,k] - self.n2*self.Eavk[i,k]*self.Eavk[i,k])*iT2
                 self.Xf[i,k] = (self.n1*self.M2avk[i,k] - self.n2*self.Mavk[i,k]*self.Mavk[i,k])*iT
-                print(steps,self.T[i],self.Eavk[i,k]*self.kb,flush=True)
+                print("{0:^12d}{1:<12.3f}{2:<12.4e}{3:<12.4e}{4:<12.4e}{5:< 12.4e}".\
+                      format(steps,self.T[i],(self.Eavk[i,k]*self.kb)**2,self.Ektav[i,k]*self.kb**2,\
+                      self.E2avk[i,k]*self.kb**2,self.Mavk[i,k],flush=True))
             if config:
                 print('Final config:')
                 quick_config(self.config,self.N)
@@ -294,6 +298,8 @@ class AutoCorrelation():
         np.zeros((self.nt,self.q))
         
         self.cavs = np.zeros(self.nt) # average cluster sizes
+        print("Steps       T           Eav^2       Ek*Ek+t     E^2av       Mav"\
+              , flush=True)
         
         for i in range(self.nt):
             self.config = initialstate(self.N) # new config for each T
@@ -341,7 +347,9 @@ class AutoCorrelation():
 
                 self.Cf[i,k] = (self.n1*self.E2avk[i,k] - self.n2*self.Eavk[i,k]*self.Eavk[i,k])*iT2
                 self.Xf[i,k] = (self.n1*self.M2avk[i,k] - self.n2*self.Mavk[i,k]*self.Mavk[i,k])*iT
-                print(steps,self.T[i],self.Eavk[i,k]*self.kb,flush=True)
+                print("{0:^12d}{1:<12.3f}{2:<12.4e}{3:<12.4e}{4:<12.4e}{5:< 12.4e}".\
+                      format(steps,self.T[i],(self.Eavk[i,k]*self.kb)**2,self.Ektav[i,k]*self.kb**2,\
+                      self.E2avk[i,k]*self.kb**2,self.Mavk[i,k],flush=True))
             
             self.cavs[i] = sum(cs)/len(cs) # calculate average cluster size
             if config:

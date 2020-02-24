@@ -77,9 +77,11 @@ class Simulation_Average():
             self.avC2 += sim[i].C**2*d
             self.avX2 += sim[i].X**2*d
         self.sigE = (self.avE2 - self.avE**2)**0.5
+        self.sigM = (self.avM2 - self.avM**2)**0.5
         self.sigC = (self.avC2 - self.avC**2)**0.5
+        self.sigX = (self.avX2 - self.avX**2)**0.5
         print('average energies are ',self.avE,'\n')
-        print('std deviations are ',self.sig)
+        print('std deviations are ',self.sigE,self.sigC)
 
 class Autocorrelation_Average():
     '''averages a list of Autocorrelation simulations performed at the same temperature points
@@ -176,7 +178,7 @@ def post_fit(T,steps,aes,data):
         params[i], params_cov = optimize.curve_fit(decay_function,\
                               steps[0][data],\
                               np.log(np.ma.masked_less(aes[i][data],0).\
-                                     filled(fill_value=1e-5)),\
+                                     filled(fill_value=1e-4)),\
                               p0=[-0.015,-0.5])
     print(params)
     print(1/params.T[0])
@@ -216,7 +218,7 @@ def Wolff_old(config,beta,j0,j1,sav):
                     config[j[1],j[2]] *= -1
         cluster.pop(0) # remove cluster item once considered, so not done twice      
         n += 1
-        
+     
 def Wolff(config,beta,j0,j1,sav,rg):
     '''Simple implementation of Wolff cluster algorithm
     Parameters:
@@ -381,11 +383,15 @@ def write_sim(path,a):
                  parameters\n')
     f.writelines('Simulation inputs:\n'+'nt,N,j0,j1,s1,s2\n')
     f.writelines(', '.join(attrs)+'\n\n')
-    f.writelines('Key: {0:>7s} {1:>7s} {2:>12s} {3:>7s} {4:>7s}\n'.format(\
-                 'T', 'M', 'E',  'C', 'X'))
+    f.writelines('Key: {0:>7s} {1:>7s} {2:>12s} {3:>7s} {4:>9s}'
+                 '{5:>12s} {6:>12s} {7:>12s} {8:>12s}\n'.format(\
+                 'T', 'M', 'E',  'C', 'X', 'sigE', 'sigM', 'sigC', 'sigX'))
     for i in range(a.nt):
-        f.writelines('     {0:7.3f} {1:7.3f} {2:12.4e} {3:7.3f} {4:7.3f}\n'.format(\
-                     a.T[i],a.avM[i],a.avE[i],a.avC[i],a.avX[i]))
+        f.writelines('     {0: >7.3f} {1: >7.3f} {2: >12.4e} {3: >7.3f}'
+                     '{4: >9.3f} {5: >12.3e} {6: >12.3e}'
+                     '{7: >12.3e} {8: >12.3e}\n'.format(\
+                     a.T[i],a.avM[i],a.avE[i],a.avC[i],a.avX[i], a.sigE[i], \
+                     a.sigM[i], a.sigC[i], a.sigX[i]))
 def sim_amalg(path):
     '''Collects simulation data from a folder full of individual text files from
     parallel simulations.
