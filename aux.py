@@ -158,7 +158,7 @@ def auto_fit(auto_av,data):
         auto_av.y.append(decay_function(auto_av.x,params[i][0],params[i][1]))
 
 
-def post_fit(T,steps,aes,data):
+def post_fit(T,steps,aes,choice):
     """Fits autocorrelation vs time measurements to a simple exponential decay
     Parameters:
     auto_av : instance from Autocorrelation_Average class
@@ -173,16 +173,20 @@ def post_fit(T,steps,aes,data):
     from scipy import optimize
 
     params = np.zeros([len(T),2])
+    data = []
+    aes = np.array(aes)
+    data = np.ma.masked_where(aes < 1e-4, aes).filled(fill_value=1e-4)
+    data = np.ma.masked_invalid(data).filled(fill_value=1)
+    #print(data)
 
     for i in range(0,len(T)):
         params[i], params_cov = optimize.curve_fit(decay_function,\
-                              steps[0][data],\
-                              np.log(np.ma.masked_less(aes[i][data],0).\
-                                     filled(fill_value=1e-4)),\
+                              steps[0][choice],\
+                              np.log(data[i][choice]),\
                               p0=[-0.015,-0.5])
-    print(params)
-    print(1/params.T[0])
-    x = np.array(steps[0])
+    #print(params)
+   # print(1/params.T[0])
+    x = np.linspace(0,steps[0][-1],200)
     y = []
 
     for i in range(len(params)):
@@ -325,21 +329,21 @@ def aes_plot(T,steps,aes,cavs,data):
     n.b. ignore the start as non-exponential and the end as statistically
     errored'''
     x,y = post_fit(T,steps,aes,data)
-    f = plt.figure(figsize=(6, 6))
+    steps[0] = np.array(steps[0])
+    f = plt.figure(figsize=(20, 10))
     f.suptitle('Autocorrelation vs. time')
     sp =  f.add_subplot(1, 2, 1 );
     for i in range(len(T)):
-        x[i] = x[i]*cavs[i] # scale the time coordinate
-        plt.scatter(steps[0], aes[i], marker='x',s=2)
-        plt.plot(x,np.e**y[i])
+        plt.scatter(steps[0]*cavs[i], aes[i], marker='x',s=2)
+        plt.plot(x*cavs[i],np.e**y[i]) # scale the time coordinate
         plt.xlabel("Steps", fontsize=20);
         plt.ylabel("Autocorrelation function", fontsize=20);  plt.axis('tight');
 
     sp =  f.add_subplot(1, 2, 2 );
     for i in range(len(T)):
-        plt.scatter(steps[0], aes[i], marker='x', s=2,\
+        plt.scatter(steps[0]*cavs[i], aes[i], marker='x', s=2,\
                     label='{0:4.2f}'.format(T[i]))
-        plt.plot(x,np.e**y[i])
+        plt.plot(x*cavs[i],np.e**y[i])
     plt.xlabel("Steps", fontsize=16);
     plt.yscale('log')
     plt.legend(title='Temperature / K')
@@ -431,7 +435,7 @@ def read_aes(path):
                 j += 1
             T_ct += 1
             print(T_ct)
-    return(T,steps,aes,cavs)
+    return(np.array(T),np.array(steps[0]),np.array(aes),np.array(cavs))
 
 def read_sim(path):
     """Reads in data from a write_sim file into a python object ready for
