@@ -213,24 +213,32 @@ class AutoCorrelation():
         self.s2 = s2
         self.sav = s1*s2
         self.rg = np.random.Generator(np.random.PCG64()) # set up the RNG
-        
-    
-    def run_Met(self,config=False):
+
+
+    def run_Met(self, config=False):
         ''' Main simulation code employing pure metropolis algorithm
         Parameters:
         config (bool) : True prints configurations after each equilibrium step and at the end of that run
         '''
-        steps_list = list(range(self.steps_test[0],self.steps_test[1],self.steps_test[2])) # the values for the intervening steps
+        steps_list = list(range(*self.steps_test))
         # Initialise the lists we're going to use to store our data
-        self.Es,self.E2s,self.Ms,self.M2s,self.Ekts = np.zeros((self.nt,self.q,self.ncalcs)),np.zeros((self.nt,self.q,self.ncalcs)),\
-                                                      np.zeros((self.nt,self.q,self.ncalcs)),np.zeros((self.nt,self.q,self.ncalcs)),\
-                                                      np.zeros((self.nt,self.q,self.ncalcs))
+        self.Es, self.E2s, self.Ms, self.M2s, self.Ekts = \
+            np.zeros((self.nt, self.q, self.ncalcs)),\
+            np.zeros((self.nt, self.q, self.ncalcs)),\
+            np.zeros((self.nt, self.q, self.ncalcs)),\
+            np.zeros((self.nt, self.q, self.ncalcs)),\
+            np.zeros((self.nt, self.q, self.ncalcs-1))
 
-        self.Eavk,self.E2avk,self.Ektav,self.Mavk,self.M2avk,self.Cf,self.Xf =\
-                                                        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
-                                                        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
-                                                        np.zeros((self.nt,self.q)),np.zeros((self.nt,self.q)),\
-                                                        np.zeros((self.nt,self.q))
+        self.Eavk, self.E2avk, self.Ektav, self.Mavk,\
+            self.M2avk, self.Cf, self.Xf =\
+            np.zeros((self.nt, self.q)),\
+            np.zeros((self.nt, self.q)),\
+            np.zeros((self.nt, self.q)),\
+            np.zeros((self.nt, self.q)),\
+            np.zeros((self.nt, self.q)),\
+            np.zeros((self.nt, self.q)),\
+            np.zeros((self.nt, self.q))
+
         self.cavs = np.ones(self.nt) # cluster sizes - 1 by definition for met
         print("Steps       T           Eav^2       Ek*Ek+t     E^2av       Mav"\
               , flush=True)
