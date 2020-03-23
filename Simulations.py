@@ -150,7 +150,8 @@ class Simulation():
 
         for tt in range(self.nt):
             E1 = M1 = E2 = M2 = 0
-            self.config = initialstate(self.N)  # Initialise random config
+            self.config = orderedstate(self.N)  # Init config - ordered more
+            #                                     efficient for pure Wolff
             iT=1.0/self.T[tt]; iT2=iT*iT;
 
             for i in range(self.eqSteps):  # Equilibrate
