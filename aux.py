@@ -181,12 +181,12 @@ def post_fit(T,steps,aes,choice):
 
     for i in range(0,len(T)):
         params[i], params_cov = optimize.curve_fit(decay_function,\
-                              steps[0][choice],\
+                              steps[choice],\
                               np.log(data[i][choice]),\
                               p0=[-0.015,-0.5])
     #print(params)
    # print(1/params.T[0])
-    x = np.linspace(0,steps[0][-1],200)
+    x = np.linspace(0,steps[-1],200)
     y = []
 
     for i in range(len(params)):
@@ -334,14 +334,14 @@ def aes_plot(T,steps,aes,cavs,data):
     f.suptitle('Autocorrelation vs. time')
     sp =  f.add_subplot(1, 2, 1 );
     for i in range(len(T)):
-        plt.scatter(steps[0]*cavs[i], aes[i], marker='x',s=2)
+        plt.scatter(steps*cavs[i], aes[i], marker='x',s=2)
         plt.plot(x*cavs[i],np.e**y[i]) # scale the time coordinate
         plt.xlabel("Steps", fontsize=20);
         plt.ylabel("Autocorrelation function", fontsize=20);  plt.axis('tight');
 
     sp =  f.add_subplot(1, 2, 2 );
     for i in range(len(T)):
-        plt.scatter(steps[0]*cavs[i], aes[i], marker='x', s=2,\
+        plt.scatter(steps*cavs[i], aes[i], marker='x', s=2,\
                     label='{0:4.2f}'.format(T[i]))
         plt.plot(x*cavs[i],np.e**y[i])
     plt.xlabel("Steps", fontsize=16);
@@ -375,7 +375,7 @@ def write_aes(path,a):
 def write_sim(path,a):
     """write Simulation  stuff to file
     Parameters:
-    path (str) : path that you want to write to
+   path (str) : path that you want to write to
     a          : autocorrelation_average object"""
     f = open(path,'a+')
     f.writelines('Simulation %s\n' % str(a))
@@ -399,43 +399,55 @@ def write_sim(path,a):
 def sim_amalg(path):
     '''Collects simulation data from a folder full of individual text files from
     parallel simulations.
-    Paramters: 
+    Paramters:
         path to file (str)
     Returns:
     data - 5xN array with T,M,E,C,X lists'''
-    
-    
+
+
     data = [[] for i in range(5)]
     for i in os.listdir(path):
         for j in range(5):
             data[j].extend(read_sim(path+i)[j])
     return(data)
 
-def read_aes(path):
+class aes_data:
     """Reads in data from a write_aes file into a python object ready for
     plotting with Td plot
     Parameters: path of file (str)"""
-    T = []
-    steps = []
-    aes = []
-    cavs = []
-    T_ct = 0
-    with open(path) as f:
-        lines = f.readlines()
-    for i, val in enumerate(lines):
-        if val == '\n':
-            T.append(float(lines[i+1].split()[1]))
-            steps.append([])
-            aes.append([])
-            cavs.append(float(lines[i+2].split()[-1]))
-            j = i+2
-            while j < len(lines) and lines[j] != '\n' and lines[j] != 'END':
-                steps[T_ct].append(int(lines[j].split()[0]))
-                aes[T_ct].append(float(lines[j].split()[1]))
-                j += 1
-            T_ct += 1
-            print(T_ct)
-    return(np.array(T),np.array(steps[0]),np.array(aes),np.array(cavs))
+    def __init__(self,path):
+        T = []
+        steps = []
+        aes = []
+        cavs = []
+        T_ct = 0
+        with open(path) as f:
+            lines = f.readlines()
+        for i, val in enumerate(lines):
+            if val == '\n':
+                T.append(float(lines[i+1].split()[1]))
+                steps.append([])
+                aes.append([])
+                cavs.append(float(lines[i+2].split()[-1]))
+                j = i+2
+                while j < len(lines) and lines[j] != '\n' and not 'END' in lines[j]:
+                    steps[T_ct].append(int(lines[j].split()[0]))
+                    aes[T_ct].append(float(lines[j].split()[1]))
+                    j += 1
+                T_ct += 1
+        self.T = np.array(T)
+        self.steps = np.array(steps[0])
+        self.aes = np.array(aes)
+        self.cavs = np.array(cavs)
+
+    def merge(self,ext_aes):
+        """Merges this aes_data object with another (useful if done in
+        parallel
+        Parameters: aes_data object"""
+        self.T = np.concatenate((self.T,ext_aes.T),axis=None)
+        self.aes = np.concatenate((self.aes,ext_aes.aes),axis=None)
+        self.steps = np.concatenate((self.steps,ext_aes.steps),axis=None)
+        self.cavs = np.concatenate((self.cavs,ext_aes.cavs),axis=None)
 
 def read_sim(path):
     """Reads in data from a write_sim file into a python object ready for
