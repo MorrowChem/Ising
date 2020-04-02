@@ -55,7 +55,7 @@ class Simulation_Average():
         self.s1 = sim[0].s1
         self.s2 = sim[0].s2
         self.eqSteps = sim[0].eqSteps
-        self.interSteps = sim[0].interSteps 
+        self.interSteps = sim[0].interSteps
         self.ncalcs = sim[0].ncalcs
         self.algo = sim[0].algo
         self.sim = sim
@@ -90,6 +90,7 @@ class Autocorrelation_Average():
     def __init__(self, sim):
         self.nt = sim[0].nt
         self.sim = sim
+        self.N = sim[0].N
         self.steps_test = sim[0].steps_test
         self.steps = np.array(range(*self.steps_test))
         self.Aes = np.zeros((self.nt,len(range(*self.steps_test))))
@@ -184,8 +185,7 @@ def post_fit(T,steps,aes,choice):
                               steps[choice],\
                               np.log(data[i][choice]),\
                               p0=[-0.015,-0.5])
-    #print(params)
-   # print(1/params.T[0])
+    print('Autocorrelation times:\n', -1/params,'\nTemperatures:\n',T)
     x = np.linspace(0,steps[-1],200)
     y = []
 
@@ -319,32 +319,36 @@ def Td_plot_read(T,E,M,C,X):
     plt.ylabel("Susceptibility", fontsize=20);   plt.axis('tight');
     return(f)
 
-def aes_plot(T,steps,aes,cavs,data):
+def aes_plot(aes ,data):
     '''Quickly plots aes lines from write aes output
     Parameters:
-    T : list of Temperature points
-    steps: list for the time axis (in units of simulation steps)
-    aes: list of values of the autocorrelation function
+    aes: aes data object
     data : slice object choosing the data that you want to fit to
     n.b. ignore the start as non-exponential and the end as statistically
     errored'''
-    x,y = post_fit(T,steps,aes,data)
-    steps[0] = np.array(steps[0])
+    try:
+        aes.N = aes.N
+    except AttributeError:
+        print('N not set')
+        aes.N = 1
+    plt.rc('font', size=20)
+    x, y = post_fit(aes.T, aes.steps, aes.aes, data)
+    aes.steps[0] = np.array(aes.steps[0])
     f = plt.figure(figsize=(20, 10))
     f.suptitle('Autocorrelation vs. time')
     sp =  f.add_subplot(1, 2, 1 );
-    for i in range(len(T)):
-        plt.scatter(steps*cavs[i], aes[i], marker='x',s=2)
-        plt.plot(x*cavs[i],np.e**y[i]) # scale the time coordinate
-        plt.xlabel("Steps", fontsize=20);
-        plt.ylabel("Autocorrelation function", fontsize=20);  plt.axis('tight');
+    for i in range(len(aes.T)):
+        plt.scatter(aes.steps*aes.cavs[i]/aes.N, aes.aes[i], marker='x',s=10)
+        plt.plot(x*aes.cavs[i]/aes.N, np.e**y[i]) # scale the time coordinate
+        plt.xlabel("Steps");
+        plt.ylabel("Autocorrelation function");  plt.axis('tight');
 
     sp =  f.add_subplot(1, 2, 2 );
-    for i in range(len(T)):
-        plt.scatter(steps*cavs[i], aes[i], marker='x', s=2,\
-                    label='{0:4.2f}'.format(T[i]))
-        plt.plot(x*cavs[i],np.e**y[i])
-    plt.xlabel("Steps", fontsize=16);
+    for i in range(len(aes.T)):
+        plt.scatter(aes.steps*aes.cavs[i]/aes.N, aes.aes[i], marker='x', s=10,\
+                    label='{0:4.2f}'.format(aes.T[i]))
+        plt.plot(x*aes.cavs[i]/aes.N, np.e**y[i])
+    plt.xlabel("Steps");
     plt.yscale('log')
     plt.legend(title='Temperature / K')
 
@@ -358,6 +362,7 @@ def write_aes(path,a):
     print('writing...')
     f = open(path,'a+')
     f.writelines('Autocorrelation simulation %s\n' % str(a))
+    f.writelines('System size: %d\n' % a.N)
     f.writelines('Key: Time/steps Aes E E2 M M2 <C>\n')
 
     for i in range(a.sim[0].nt):
@@ -440,12 +445,14 @@ class aes_data:
         self.aes = np.array(aes)
         self.cavs = np.array(cavs)
 
-    def merge(self,ext_aes):
+    def merge(self,ext_aes, isfile = False):
         """Merges this aes_data object with another (useful if done in
         parallel
         Parameters: aes_data object"""
-        self.T = np.concatenate((self.T,ext_aes.T),axis=None)
-        self.aes = np.concatenate((self.aes,ext_aes.aes),axis=None)
+        if isfile:
+            ext_aes = aes_data(ext_aes)
+#        self.T = np.concatenate((self.T,ext_aes.T),axis=None)
+        self.aes = np.concatenate((self.aes,ext_aes.aes),axis=1)
         self.steps = np.concatenate((self.steps,ext_aes.steps),axis=None)
         self.cavs = np.concatenate((self.cavs,ext_aes.cavs),axis=None)
 
