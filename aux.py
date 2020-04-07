@@ -354,6 +354,34 @@ def aes_plot(aes ,data):
 
     return(f)
 
+
+def ax_aes_plot(fig, aes ,data):
+    '''Quickly plots aes lines from write aes output
+    Parameters:
+        fig: figure  to plot to
+    aes: aes data object
+    data : slice object choosing the data that you want to fit to
+    n.b. ignore the start as non-exponential and the end as statistically
+    errored'''
+    try:
+        aes.N = aes.N
+    except AttributeError:
+        print('N not set')
+        aes.N = 1
+    ax1, ax2 = fig.get_axes()
+    plt.rc('font', size=20)
+    x, y = post_fit(aes.T, aes.steps, aes.aes, data)
+    aes.steps[0] = np.array(aes.steps[0])
+    for i in range(len(aes.T)):
+        ax1.scatter(aes.steps*aes.cavs[i]/aes.N, aes.aes[i], marker='x',s=10)
+        ax1.plot(x*aes.cavs[i]/aes.N, np.e**y[i]) # scale the time coordinate
+
+    for i in range(len(aes.T)):
+        ax2.scatter(aes.steps*aes.cavs[i]/aes.N, aes.aes[i], marker='x', s=10,\
+                    label='{0:4.2f}'.format(aes.T[i]))
+        ax2.plot(x*aes.cavs[i]/aes.N, np.e**y[i])
+
+
 def write_aes(path,a):
     """write Autocorrelation stuff to file
     Parameters:
@@ -407,7 +435,7 @@ def sim_amalg(path):
     Paramters:
         path to file (str)
     Returns:
-    data - 5xN array with T,M,E,C,X lists'''
+    data - 5xN array with T,E,M,C,X lists'''
 
 
     data = [[] for i in range(5)]
@@ -474,8 +502,8 @@ def read_sim(path):
             while j < len(lines) and lines[j].split()[0] != '\n' :
                 dat = lines[j].split()
                 T.append(float(dat[0]))
-                M.append(float(dat[1]))
                 E.append(float(dat[2]))
+                M.append(float(dat[1]))
                 C.append(float(dat[3]))
                 X.append(float(dat[4]))
                 j += 1
